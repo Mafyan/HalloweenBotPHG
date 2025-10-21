@@ -33,8 +33,25 @@ pip install -r requirements.txt
 
 ## 🎮 Запуск
 
+### Windows
 ```bash
+start.bat
+```
+или
+```bash
+pip install -r requirements.txt
 python bot.py
+```
+
+### Ubuntu/Linux
+См. подробную инструкцию в [UBUNTU_INSTALL.md](UBUNTU_INSTALL.md)
+
+Краткая версия:
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python3 bot.py
 ```
 
 ## 📝 Использование
