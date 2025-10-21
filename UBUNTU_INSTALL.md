@@ -1,10 +1,13 @@
-# 🐧 Инструкция по установке бота на Ubuntu 20.04
+# 🐧 Установка бота на Ubuntu 20.04
 
-## 📋 Требования
+Подробная инструкция по установке и запуску Telegram бота для конкурса фотографий на сервере Ubuntu 20.04.
 
-- Ubuntu 20.04 или выше
-- Root доступ или sudo права
-- Интернет соединение
+## 📋 Предварительные требования
+
+- Сервер Ubuntu 20.04
+- Доступ к серверу через SSH
+- Права sudo
+- Интернет-соединение
 
 ## 🚀 Установка
 
@@ -15,143 +18,115 @@ sudo apt update
 sudo apt upgrade -y
 ```
 
-### Шаг 2: Установка Python 3 и pip
+### Шаг 2: Установка Python и необходимых пакетов
 
 ```bash
-sudo apt install python3 python3-pip python3-venv -y
-```
+# Установка Python 3.9 и pip
+sudo apt install python3 python3-pip python3-venv git -y
 
-Проверьте версию Python (должна быть 3.8+):
-```bash
+# Проверка версии Python (должна быть 3.8+)
 python3 --version
 ```
 
-### Шаг 3: Установка Git
+### Шаг 3: Клонирование репозитория
 
 ```bash
-sudo apt install git -y
-```
-
-### Шаг 4: Клонирование репозитория
-
-```bash
-cd /opt
-sudo git clone https://github.com/Mafyan/HalloweenBotPHG.git
-cd HalloweenBotPHG
-```
-
-Или клонируйте в домашнюю директорию:
-```bash
+# Переход в домашнюю директорию
 cd ~
+
+# Клонирование репозитория
 git clone https://github.com/Mafyan/HalloweenBotPHG.git
+
+# Переход в папку проекта
 cd HalloweenBotPHG
 ```
 
-### Шаг 5: Создание виртуального окружения
+### Шаг 4: Создание виртуального окружения
 
 ```bash
+# Создание виртуального окружения
 python3 -m venv venv
+
+# Активация виртуального окружения
 source venv/bin/activate
+
+# После активации в начале строки появится (venv)
 ```
 
-### Шаг 6: Установка зависимостей
+### Шаг 5: Установка зависимостей
 
 ```bash
+# Установка всех необходимых пакетов
+pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-### Шаг 7: Проверка конфигурации
+### Шаг 6: Настройка конфигурации (опционально)
 
-Откройте файл `config.py` и убедитесь, что все данные корректны:
+Если нужно изменить настройки, отредактируйте файл `config.py`:
 
 ```bash
 nano config.py
 ```
 
-Проверьте:
-- `BOT_TOKEN` - токен вашего бота
+Основные параметры уже настроены:
+- `BOT_TOKEN` - токен бота
 - `MODERATION_CHAT_ID` - ID модераторского чата
-- `DEADLINE` - дата и время дедлайна
+- `DEADLINE` - дедлайн приёма заявок
 
-Сохраните: `Ctrl + O`, `Enter`, выход: `Ctrl + X`
+Для сохранения: `Ctrl+O`, `Enter`, для выхода: `Ctrl+X`
 
-## 🔧 Запуск бота
+## ▶️ Запуск бота
 
-### Запуск в терминале (для тестирования)
+### Разовый запуск (для тестирования)
 
 ```bash
+# Убедитесь, что виртуальное окружение активно (должно быть (venv) в начале строки)
 source venv/bin/activate
+
+# Запуск бота
 python3 bot.py
 ```
 
-Для остановки: `Ctrl + C`
+Для остановки нажмите `Ctrl+C`
 
 ### Запуск в фоновом режиме с помощью screen
 
-Установите screen:
 ```bash
+# Установка screen (если не установлен)
 sudo apt install screen -y
-```
 
-Создайте новую сессию:
-```bash
+# Создание новой сессии screen
 screen -S halloween_bot
+
+# Активация виртуального окружения
+source ~/HalloweenBotPHG/venv/bin/activate
+
+# Запуск бота
+python3 ~/HalloweenBotPHG/bot.py
 ```
 
-Запустите бота:
-```bash
-cd ~/HalloweenBotPHG  # или /opt/HalloweenBotPHG
-source venv/bin/activate
-python3 bot.py
-```
+Для выхода из screen без остановки бота: `Ctrl+A`, затем `D`
 
-Отключитесь от сессии: `Ctrl + A`, затем `D`
-
-Вернуться к боту:
+Для возврата к сессии:
 ```bash
 screen -r halloween_bot
 ```
 
-Список всех сессий:
+Для просмотра всех сессий:
 ```bash
 screen -ls
 ```
 
-### Запуск в фоновом режиме с помощью tmux
+### Запуск с помощью systemd (рекомендуется для production)
 
-Установите tmux:
-```bash
-sudo apt install tmux -y
-```
-
-Создайте новую сессию:
-```bash
-tmux new -s halloween_bot
-```
-
-Запустите бота:
-```bash
-cd ~/HalloweenBotPHG  # или /opt/HalloweenBotPHG
-source venv/bin/activate
-python3 bot.py
-```
-
-Отключитесь от сессии: `Ctrl + B`, затем `D`
-
-Вернуться к боту:
-```bash
-tmux attach -t halloween_bot
-```
-
-## 🔄 Автозапуск с помощью systemd (рекомендуется)
-
-### Создайте systemd сервис
+Создайте systemd service:
 
 ```bash
 sudo nano /etc/systemd/system/halloween-bot.service
 ```
 
-Вставьте следующее содержимое (измените пути если нужно):
+Вставьте следующий текст (замените `USERNAME` на ваше имя пользователя):
 
 ```ini
 [Unit]
@@ -160,10 +135,10 @@ After=network.target
 
 [Service]
 Type=simple
-User=your_username
-WorkingDirectory=/home/your_username/HalloweenBotPHG
-Environment="PATH=/home/your_username/HalloweenBotPHG/venv/bin"
-ExecStart=/home/your_username/HalloweenBotPHG/venv/bin/python3 /home/your_username/HalloweenBotPHG/bot.py
+User=USERNAME
+WorkingDirectory=/home/USERNAME/HalloweenBotPHG
+Environment="PATH=/home/USERNAME/HalloweenBotPHG/venv/bin"
+ExecStart=/home/USERNAME/HalloweenBotPHG/venv/bin/python3 /home/USERNAME/HalloweenBotPHG/bot.py
 Restart=always
 RestartSec=10
 
@@ -171,234 +146,218 @@ RestartSec=10
 WantedBy=multi-user.target
 ```
 
-**ВАЖНО:** Замените `your_username` на ваше имя пользователя! Узнать его можно командой: `whoami`
-
-Если установили в `/opt`, используйте:
-```ini
-User=root
-WorkingDirectory=/opt/HalloweenBotPHG
-Environment="PATH=/opt/HalloweenBotPHG/venv/bin"
-ExecStart=/opt/HalloweenBotPHG/venv/bin/python3 /opt/HalloweenBotPHG/bot.py
-```
-
-### Включите и запустите сервис
+Сохраните файл (`Ctrl+O`, `Enter`, `Ctrl+X`) и выполните:
 
 ```bash
-# Перезагрузите конфигурацию systemd
+# Перезагрузка systemd
 sudo systemctl daemon-reload
 
-# Включите автозапуск при старте системы
-sudo systemctl enable halloween-bot
-
-# Запустите бота
+# Запуск сервиса
 sudo systemctl start halloween-bot
 
-# Проверьте статус
+# Включение автозапуска при загрузке системы
+sudo systemctl enable halloween-bot
+
+# Проверка статуса
 sudo systemctl status halloween-bot
 ```
 
-### Полезные команды для управления сервисом
+#### Управление сервисом:
 
 ```bash
-# Остановить бота
+# Остановка бота
 sudo systemctl stop halloween-bot
 
-# Перезапустить бота
+# Перезапуск бота
 sudo systemctl restart halloween-bot
 
-# Посмотреть логи
+# Просмотр логов
 sudo journalctl -u halloween-bot -f
 
-# Посмотреть последние 100 строк логов
+# Просмотр последних 100 строк логов
 sudo journalctl -u halloween-bot -n 100
-
-# Отключить автозапуск
-sudo systemctl disable halloween-bot
-```
-
-## 📊 Мониторинг и логи
-
-### Просмотр логов в реальном времени
-
-```bash
-sudo journalctl -u halloween-bot -f
-```
-
-### Создание файла логов
-
-Создайте директорию для логов:
-```bash
-mkdir ~/HalloweenBotPHG/logs
-```
-
-Измените `bot.py`, добавив в начало файла (после импортов):
-
-```python
-import logging
-
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('logs/bot.log'),
-        logging.StreamHandler()
-    ]
-)
-```
-
-## 🔒 Безопасность
-
-### Настройка firewall (опционально)
-
-```bash
-# Разрешите SSH
-sudo ufw allow ssh
-
-# Включите firewall
-sudo ufw enable
-
-# Проверьте статус
-sudo ufw status
-```
-
-### Защита токена бота
-
-Убедитесь, что файл `config.py` недоступен для чтения другим пользователям:
-
-```bash
-chmod 600 config.py
 ```
 
 ## 🔄 Обновление бота
 
-Чтобы получить обновления из GitHub:
-
 ```bash
-# Остановите бота
+# Переход в папку проекта
+cd ~/HalloweenBotPHG
+
+# Остановка бота (если используется systemd)
 sudo systemctl stop halloween-bot
 
-# Обновите код
-cd ~/HalloweenBotPHG  # или /opt/HalloweenBotPHG
+# Получение последних изменений
 git pull origin main
 
-# Обновите зависимости (если изменились)
+# Активация виртуального окружения
 source venv/bin/activate
+
+# Обновление зависимостей (если были изменения)
 pip install -r requirements.txt --upgrade
 
-# Запустите бота
+# Запуск бота снова
 sudo systemctl start halloween-bot
+
+# Проверка статуса
+sudo systemctl status halloween-bot
 ```
 
-## 🗄️ Резервное копирование базы данных
+## 📊 Мониторинг и логи
 
-Создайте скрипт для бэкапа:
+### Просмотр логов в реальном времени:
 
 ```bash
-nano ~/backup_bot.sh
+# Если используется systemd
+sudo journalctl -u halloween-bot -f
+
+# Если используется screen
+screen -r halloween_bot
 ```
 
-Вставьте:
-```bash
-#!/bin/bash
-DATE=$(date +%Y%m%d_%H%M%S)
-cp ~/HalloweenBotPHG/contest_bot.db ~/HalloweenBotPHG/backups/contest_bot_$DATE.db
-echo "Backup created: contest_bot_$DATE.db"
-```
+### Проверка работы бота:
 
-Сделайте исполняемым:
-```bash
-chmod +x ~/backup_bot.sh
-```
+1. Отправьте боту команду `/start` в Telegram
+2. Проверьте, что бот отвечает
+3. В модераторском чате выполните команду `/stats` для проверки статистики
 
-Создайте директорию для бэкапов:
-```bash
-mkdir ~/HalloweenBotPHG/backups
-```
-
-Запускайте бэкап:
-```bash
-~/backup_bot.sh
-```
-
-### Автоматический бэкап через cron
-
-```bash
-crontab -e
-```
-
-Добавьте строку (бэкап каждый день в 3:00):
-```
-0 3 * * * /home/your_username/backup_bot.sh
-```
-
-## ❓ Решение проблем
+## 🔧 Устранение неполадок
 
 ### Бот не запускается
 
-1. Проверьте логи:
 ```bash
+# Проверьте логи
 sudo journalctl -u halloween-bot -n 50
-```
 
-2. Проверьте права доступа:
-```bash
-ls -la ~/HalloweenBotPHG
-```
-
-3. Проверьте виртуальное окружение:
-```bash
-source venv/bin/activate
-python3 -c "import aiogram; print('OK')"
-```
-
-### База данных заблокирована
-
-```bash
-sudo systemctl stop halloween-bot
-rm contest_bot.db-wal contest_bot.db-shm
-sudo systemctl start halloween-bot
+# Проверьте, что все зависимости установлены
+source ~/HalloweenBotPHG/venv/bin/activate
+pip install -r requirements.txt
 ```
 
 ### Проблемы с правами доступа
 
 ```bash
-sudo chown -R your_username:your_username ~/HalloweenBotPHG
-chmod 755 ~/HalloweenBotPHG
+# Убедитесь, что файлы принадлежат вашему пользователю
+cd ~/HalloweenBotPHG
+ls -la
+
+# Если нужно, измените владельца
+sudo chown -R $USER:$USER ~/HalloweenBotPHG
 ```
 
-## 📞 Полезные команды
+### Бот не может создать базу данных
 
 ```bash
-# Узнать ваше имя пользователя
-whoami
+# Проверьте права на запись в директории
+cd ~/HalloweenBotPHG
+ls -la
 
-# Узнать текущую директорию
-pwd
-
-# Проверить использование диска
-df -h
-
-# Проверить использование памяти
-free -h
-
-# Проверить запущенные процессы Python
-ps aux | grep python
-
-# Убить зависший процесс бота
-pkill -f bot.py
+# Создайте базу вручную (она создастся автоматически при первом запуске)
+touch contest_bot.db
+chmod 644 contest_bot.db
 ```
 
-## ✅ Проверка работы
+### Проверка подключения к Telegram API
 
-1. Отправьте `/start` вашему боту в Telegram
-2. Проверьте, что бот отвечает
-3. Попробуйте пройти регистрацию
-4. Проверьте, что заявка приходит в модераторский чат
-5. Проверьте команду `/stats` в модераторском чате
+```bash
+# Активируйте виртуальное окружение
+source ~/HalloweenBotPHG/venv/bin/activate
+
+# Запустите бота в режиме отладки
+python3 bot.py
+```
+
+## 🔒 Безопасность
+
+### Рекомендации:
+
+1. **Настройте файрволл:**
+```bash
+sudo ufw allow OpenSSH
+sudo ufw enable
+```
+
+2. **Регулярно обновляйте систему:**
+```bash
+sudo apt update && sudo apt upgrade -y
+```
+
+3. **Создайте бэкап базы данных:**
+```bash
+# Создайте папку для бэкапов
+mkdir -p ~/backups
+
+# Создайте скрипт для бэкапа
+cat > ~/backup-bot.sh << 'EOF'
+#!/bin/bash
+DATE=$(date +%Y%m%d_%H%M%S)
+cp ~/HalloweenBotPHG/contest_bot.db ~/backups/contest_bot_$DATE.db
+echo "Backup created: contest_bot_$DATE.db"
+EOF
+
+# Сделайте скрипт исполняемым
+chmod +x ~/backup-bot.sh
+
+# Запуск бэкапа
+~/backup-bot.sh
+```
+
+4. **Настройте автоматический бэкап через cron:**
+```bash
+# Откройте crontab
+crontab -e
+
+# Добавьте строку для ежедневного бэкапа в 3:00
+0 3 * * * /home/$USER/backup-bot.sh
+```
+
+## 📱 Проверка работоспособности
+
+После установки проверьте:
+
+1. ✅ Бот отвечает на `/start`
+2. ✅ Можно пройти весь процесс регистрации
+3. ✅ Фото отправляется в модераторский чат
+4. ✅ Кнопки одобрения/отклонения работают
+5. ✅ Команда `/stats` показывает статистику
+6. ✅ База данных создалась (`contest_bot.db`)
+
+## 💡 Полезные команды
+
+```bash
+# Просмотр процессов Python
+ps aux | grep python
+
+# Проверка использования памяти
+free -h
+
+# Проверка места на диске
+df -h
+
+# Просмотр сетевых соединений бота
+sudo netstat -tulpn | grep python
+
+# Перезагрузка сервера (если нужно)
+sudo reboot
+```
+
+## 📞 Поддержка
+
+При возникновении проблем проверьте:
+1. Логи бота: `sudo journalctl -u halloween-bot -n 100`
+2. Наличие интернет-соединения: `ping -c 3 telegram.org`
+3. Правильность токена бота в `config.py`
+4. Права бота в модераторском чате Telegram
 
 ## 🎉 Готово!
 
-Ваш бот успешно установлен и запущен на Ubuntu 20.04!
+Ваш бот установлен и работает! Теперь он:
+- ✅ Автоматически запускается при перезагрузке сервера
+- ✅ Перезапускается при сбоях
+- ✅ Логирует все действия
+- ✅ Готов принимать заявки на конкурс
 
-Для поддержки обращайтесь к документации: https://github.com/Mafyan/HalloweenBotPHG
+---
+
+**Важно:** Не забудьте добавить бота в модераторский чат и дать ему права администратора для отправки сообщений!
 
