@@ -44,6 +44,29 @@ def is_deadline_passed() -> bool:
     return now > config.DEADLINE
 
 
+async def check_subscription(user_id: int) -> bool:
+    """Проверка подписки пользователя на канал"""
+    if not config.CHECK_SUBSCRIPTION:
+        return True
+    
+    try:
+        # Пробуем использовать ID канала, если указан
+        channel = config.VOTING_CHANNEL_ID if config.VOTING_CHANNEL_ID else config.VOTING_CHANNEL_USERNAME
+        
+        # Получаем информацию о члене канала
+        member = await bot.get_chat_member(chat_id=channel, user_id=user_id)
+        
+        # Проверяем статус: member, administrator, creator
+        if member.status in ['member', 'administrator', 'creator']:
+            return True
+        else:
+            return False
+    except Exception as e:
+        print(f"Ошибка проверки подписки для user {user_id}: {e}")
+        # Если не удалось проверить, пропускаем проверку
+        return True
+
+
 def format_phone(phone: str) -> str:
     """Форматирование номера телефона"""
     # Удаляем все кроме цифр и +
@@ -73,6 +96,15 @@ def get_start_keyboard() -> InlineKeyboardMarkup:
     """Клавиатура для начала"""
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="Участвовать 🎃", callback_data="participate")]
+    ])
+    return keyboard
+
+
+def get_subscription_keyboard() -> InlineKeyboardMarkup:
+    """Клавиатура для подписки на канал"""
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="📢 Подписаться на канал", url=f"https://{config.VOTING_CHANNEL}")],
+        [InlineKeyboardButton(text="✅ Я подписался!", callback_data="check_subscription")]
     ])
     return keyboard
 
@@ -130,7 +162,8 @@ async def cmd_start(message: Message, state: FSMContext):
             "✅ Вы уже отправили заявку на конкурс!\n\n"
             "Ваша заявка находится на модерации. "
             "После проверки ваше фото будет опубликовано для голосования.\n\n"
-            f"📢 Следите за новостями в канале {config.VOTING_CHANNEL}"
+            f"📢 Следите за новостями в канале {config.VOTING_CHANNEL}\n"
+            f"🗳️ Голосование будет проходить с 1 по 4 ноября"
         )
         return
     
@@ -139,7 +172,19 @@ async def cmd_start(message: Message, state: FSMContext):
     if is_deadline_passed():
         await message.answer(
             "⏰ Приём заявок завершён.\n\n"
-            f"Голосование с 1 по 4 ноября в канале {config.VOTING_CHANNEL}"
+            f"🗳️ Голосование проходит с 1 по 4 ноября в канале {config.VOTING_CHANNEL}"
+        )
+        return
+    
+    # Проверяем подписку на канал
+    is_subscribed = await check_subscription(message.from_user.id)
+    
+    if not is_subscribed:
+        await message.answer(
+            "🎃 Добро пожаловать на конкурс костюмов Хэллоуин!\n\n"
+            "📢 Для участия в конкурсе необходимо подписаться на наш канал.\n\n"
+            f"После подписки нажмите кнопку «✅ Я подписался!»",
+            reply_markup=get_subscription_keyboard()
         )
         return
     
@@ -151,10 +196,41 @@ async def cmd_start(message: Message, state: FSMContext):
         "• Отправьте фото через этого бота\n"
         "• Пройдите простую регистрацию\n"
         "• Ждите модерации\n\n"
+        f"🗳️ Голосование будет проходить с 1 по 4 ноября в нашем канале!\n\n"
         "Готовы участвовать? Нажмите кнопку ниже! 👇"
     )
     
     await message.answer(welcome_text, reply_markup=get_start_keyboard())
+
+
+# Хендлер кнопки "Я подписался!"
+@dp.callback_query(F.data == "check_subscription")
+async def process_check_subscription(callback: CallbackQuery, state: FSMContext):
+    """Проверка подписки на канал"""
+    is_subscribed = await check_subscription(callback.from_user.id)
+    
+    if not is_subscribed:
+        await callback.answer(
+            "❌ Вы ещё не подписались на канал. Пожалуйста, подпишитесь и попробуйте снова.",
+            show_alert=True
+        )
+        return
+    
+    # Пользователь подписан, показываем приветствие
+    welcome_text = (
+        "🎃 Отлично! Теперь вы можете участвовать в конкурсе!\n\n"
+        "📸 Отправьте ваше фото в костюме из нашей фотозоны для участия в конкурсе!\n\n"
+        "Правила просты:\n"
+        "• Сделайте фото в костюме в нашей фотозоне\n"
+        "• Отправьте фото через этого бота\n"
+        "• Пройдите простую регистрацию\n"
+        "• Ждите модерации\n\n"
+        f"🗳️ Голосование будет проходить с 1 по 4 ноября в нашем канале!\n\n"
+        "Готовы участвовать? Нажмите кнопку ниже! 👇"
+    )
+    
+    await callback.message.edit_text(welcome_text, reply_markup=get_start_keyboard())
+    await callback.answer("✅ Отлично! Вы подписаны на канал!")
 
 
 # Хендлер кнопки "Участвовать"
@@ -164,7 +240,20 @@ async def process_participate(callback: CallbackQuery, state: FSMContext):
     if is_deadline_passed():
         await callback.message.edit_text(
             "⏰ Приём заявок завершён.\n\n"
-            f"Голосование с 1 по 4 ноября в канале {config.VOTING_CHANNEL}"
+            f"🗳️ Голосование проходит с 1 по 4 ноября в канале {config.VOTING_CHANNEL}"
+        )
+        await callback.answer()
+        return
+    
+    # Дополнительная проверка подписки
+    is_subscribed = await check_subscription(callback.from_user.id)
+    
+    if not is_subscribed:
+        await callback.message.edit_text(
+            "❌ Упс! Похоже, вы отписались от канала.\n\n"
+            "📢 Для участия в конкурсе необходимо быть подписанным на наш канал.\n\n"
+            "После подписки нажмите кнопку «✅ Я подписался!»",
+            reply_markup=get_subscription_keyboard()
         )
         await callback.answer()
         return
@@ -346,7 +435,8 @@ async def process_photo(message: Message, state: FSMContext):
         "• Ваше фото отправлено на модерацию\n"
         "• Модераторы проверят заявку в ближайшее время\n"
         "• После одобрения фото будет опубликовано для голосования\n\n"
-        f"📢 Следите за новостями и голосованием в канале {config.VOTING_CHANNEL}\n\n"
+        f"🗳️ Голосование будет проходить с 1 по 4 ноября!\n"
+        f"📢 Следите за новостями в канале {config.VOTING_CHANNEL}\n\n"
         "🎃 Спасибо за участие в конкурсе! Удачи!",
         reply_markup=ReplyKeyboardRemove()
     )
@@ -516,6 +606,7 @@ async def handle_already_submitted(message: Message):
     if db.has_user_submitted(message.from_user.id):
         await message.answer(
             "✅ Ваша заявка уже принята!\n\n"
+            f"🗳️ Голосование будет проходить с 1 по 4 ноября\n"
             f"📢 Следите за новостями в канале {config.VOTING_CHANNEL}"
         )
     else:

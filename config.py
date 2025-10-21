@@ -28,6 +28,11 @@ CLUBS = {
 
 # Канал для голосования
 VOTING_CHANNEL = "t.me/fitclubmoscow"
+VOTING_CHANNEL_USERNAME = "@fitclubmoscow"  # Username канала с @
+VOTING_CHANNEL_ID = None  # Если известен ID канала, укажите его здесь (например: -1001234567890)
+
+# Проверка подписки на канал
+CHECK_SUBSCRIPTION = True  # Включить/выключить проверку подписки
 
 # База данных
 DATABASE_FILE = "contest_bot.db"
