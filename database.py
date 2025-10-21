@@ -222,4 +222,19 @@ class Database:
         
         stats = {row[0]: row[1] for row in rows}
         return stats
+    
+    def has_user_submitted(self, user_id: int) -> bool:
+        """Проверить, отправлял ли пользователь заявку"""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT COUNT(*) FROM submissions
+            WHERE user_id = ?
+        """, (user_id,))
+        
+        count = cursor.fetchone()[0]
+        conn.close()
+        
+        return count > 0
 

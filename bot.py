@@ -124,6 +124,16 @@ def get_moderation_keyboard(submission_id: int) -> InlineKeyboardMarkup:
 @dp.message(Command("start"))
 async def cmd_start(message: Message, state: FSMContext):
     """Обработка команды /start"""
+    # Проверяем, не отправлял ли пользователь уже заявку
+    if db.has_user_submitted(message.from_user.id):
+        await message.answer(
+            "✅ Вы уже отправили заявку на конкурс!\n\n"
+            "Ваша заявка находится на модерации. "
+            "После проверки ваше фото будет опубликовано для голосования.\n\n"
+            f"📢 Следите за новостями в канале {config.VOTING_CHANNEL}"
+        )
+        return
+    
     await state.clear()
     
     if is_deadline_passed():
@@ -331,9 +341,13 @@ async def process_photo(message: Message, state: FSMContext):
     
     # Подтверждение пользователю
     await message.answer(
-        "✅ Спасибо! Ваша заявка принята и отправлена на модерацию.\n\n"
-        "После проверки модераторами ваше фото будет опубликовано для голосования.\n\n"
-        f"📢 Следите за новостями в канале {config.VOTING_CHANNEL}",
+        "✅ Отлично! Ваша заявка успешно принята!\n\n"
+        "📝 Что дальше?\n"
+        "• Ваше фото отправлено на модерацию\n"
+        "• Модераторы проверят заявку в ближайшее время\n"
+        "• После одобрения фото будет опубликовано для голосования\n\n"
+        f"📢 Следите за новостями и голосованием в канале {config.VOTING_CHANNEL}\n\n"
+        "🎃 Спасибо за участие в конкурсе! Удачи!",
         reply_markup=ReplyKeyboardRemove()
     )
     
@@ -488,6 +502,27 @@ async def cmd_stats(message: Message):
     )
     
     await message.answer(stats_text)
+
+
+# Универсальный обработчик для пользователей, уже отправивших заявку
+@dp.message()
+async def handle_already_submitted(message: Message):
+    """Обработка сообщений от пользователей, уже отправивших заявку"""
+    # Игнорируем сообщения из модераторского чата
+    if message.chat.id == config.MODERATION_CHAT_ID:
+        return
+    
+    # Проверяем, отправлял ли пользователь заявку
+    if db.has_user_submitted(message.from_user.id):
+        await message.answer(
+            "✅ Ваша заявка уже принята!\n\n"
+            f"📢 Следите за новостями в канале {config.VOTING_CHANNEL}"
+        )
+    else:
+        # Если пользователь не в процессе регистрации и не отправлял заявку
+        await message.answer(
+            "Для участия в конкурсе используйте команду /start"
+        )
 
 
 async def main():
